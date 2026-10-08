@@ -8,6 +8,7 @@ import type {
   NotificationPayload,
   Filter,
 } from '@/types'
+import type { StageMapping } from '@/lib/stage'
 
 /**
  * Rich error thrown by all api.* methods on failure. Carries the HTTP status,
@@ -89,6 +90,7 @@ async function fetchVoid(path: string, init?: RequestInit): Promise<void> {
 
 export const api = {
   getProjects: () => fetchJson<Project[]>('/projects'),
+  getStages: () => fetchJson<StageMapping>('/stages'),
   getPendingNotifications: (sinceTs: number) =>
     fetchJson<NotificationPayload[]>(`/notifications?since=${sinceTs}`),
   getRecentSessions: (limit?: number, since?: number) => {

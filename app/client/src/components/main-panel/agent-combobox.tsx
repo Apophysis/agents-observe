@@ -1,6 +1,8 @@
 import { useState, useMemo, useRef } from 'react'
 import { useEvents } from '@/hooks/use-events'
 import { useAgents } from '@/hooks/use-agents'
+import { useStageMapping } from '@/hooks/use-stage-mapping'
+import { deriveStage, type Stage } from '@/lib/stage'
 import { useUIStore } from '@/stores/ui-store'
 import { getAgentDisplayName, buildAgentColorMap, getAgentColorById } from '@/lib/agent-utils'
 import { AgentLabel } from '@/components/shared/agent-label'
@@ -43,6 +45,7 @@ export function AgentCombobox() {
   const { data: events } = useEvents(selectedSessionId)
   const agents = useAgents(selectedSessionId, events)
   const [open, setOpen] = useState(false)
+  const { data: stageMapping } = useStageMapping()
   const snapshotRef = useRef<Agent[]>([])
 
   // Snapshot the sorted order when the popover opens so it doesn't
@@ -68,6 +71,16 @@ export function AgentCombobox() {
   }, [open, agents])
 
   const agentColorMap = useMemo(() => buildAgentColorMap(agents), [agents])
+  // Derived from events on demand (only while the list is open); never stored.
+  const stageByAgent = useMemo(() => {
+    const out = new Map<string, Stage>()
+    if (!open || !events || !stageMapping) return out
+    for (const a of agents) {
+      const st = deriveStage(a, events, stageMapping)
+      if (st) out.set(a.id, st)
+    }
+    return out
+  }, [open, agents, events, stageMapping])
   const agentMap = useMemo(() => new Map(agents.map((a) => [a.id, a])), [agents])
 
   const activeCount = agents.filter((a) => a.status === 'active').length
@@ -194,6 +207,18 @@ export function AgentCombobox() {
                         })()}
                       </div>
                       <div className="flex items-center gap-2 shrink-0 text-[10px] text-muted-foreground">
+                        {stageByAgent.get(agent.id) && (
+                          <Badge
+                            variant={
+                              stageByAgent.get(agent.id)!.kind === 'needs-input'
+                                ? 'default'
+                                : 'secondary'
+                            }
+                            className="text-[9px] h-3.5 px-1"
+                          >
+                            {stageByAgent.get(agent.id)!.label}
+                          </Badge>
+                        )}
                         <span>{formatStartTime(agent.firstEventAt ?? 0)}</span>
                         <span>{formatRuntime(agent)}</span>
                         <Badge variant="outline" className="text-[9px] h-3.5 px-1">
