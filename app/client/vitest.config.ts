@@ -2,6 +2,8 @@ import { defineConfig } from 'vitest/config'
 import path from 'path'
 
 export default defineConfig({
+  // Tests are excluded from tsconfig.app.json (Docker build), so set the JSX transform here.
+  esbuild: { jsx: 'automatic' },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
