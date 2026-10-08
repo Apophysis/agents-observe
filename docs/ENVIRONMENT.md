@@ -48,6 +48,7 @@ server directly.
 | `AGENTS_OBSERVE_ALLOW_DB_RESET` | `backup` | Admin reset policy: `allow` (wipe without backup), `backup` (snapshot the DB then wipe), `deny` (refuse). |
 | `AGENTS_OBSERVE_SHUTDOWN_DELAY_MS` | `30000` | Ms with no connected clients before the server auto-shuts down. Set to `0` or negative to disable auto-shutdown. |
 | `AGENTS_OBSERVE_LOG_LEVEL` | `debug` | Server log level. Same values as the CLI variable. |
+| `AGENTS_OBSERVE_STAGES_PATH` | `config/stages.json` | Path to a JSON file mapping `agent_type` to a stage label for `GET /api/stages`. Read in `routes/stages.ts`. Missing or invalid files fall back to the built-in default with a warning. |
 
 ---
 

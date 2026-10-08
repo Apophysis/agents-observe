@@ -1,0 +1,11 @@
+{
+  "main": "Orchestrating",
+  "stages": {
+    "planner": { "label": "Planning" },
+    "Plan": { "label": "Planning" },
+    "Explore": { "label": "Exploring" },
+    "coder": { "label": "Coding" },
+    "tester": { "label": "Testing" },
+    "reviewer": { "label": "Reviewing" }
+  }
+}

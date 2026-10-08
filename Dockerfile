@@ -43,6 +43,9 @@ COPY CHANGELOG.md /app/CHANGELOG.md
 # is published on 127.0.0.1 only.
 ENV AGENTS_OBSERVE_BIND_HOST=0.0.0.0
 
+# Copy stage mapping config for /api/stages endpoint
+COPY config/stages.json /app/config/stages.json
+
 EXPOSE 4981
 
 WORKDIR /app/server
