@@ -2,7 +2,7 @@
 // Centralized config resolution for Agents Observe CLI and MCP server.
 // No dependencies - uses only Node.js built-ins.
 
-import { resolve, dirname } from 'node:path'
+import { resolve, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { existsSync } from 'node:fs'
 import { ALL_CALLBACK_HANDLERS } from './callbacks.mjs'
@@ -88,9 +88,9 @@ export function getConfig(overrides = {}) {
     }
   }
 
-  const dataDir = `${localDataRootDir}/data`
+  const dataDir = join(localDataRootDir, 'data')
 
-  const serverPortFile = `${localDataRootDir}/${serverPortFileName}`
+  const serverPortFile = join(localDataRootDir, serverPortFileName)
   const serverPort = overrides.serverPort || process.env.AGENTS_OBSERVE_SERVER_PORT || '4981'
   const savedPort = readServerPortFile(serverPortFile)
   const customApiBaseUrl = overrides.baseUrl || process.env.AGENTS_OBSERVE_API_BASE_URL || null
@@ -204,7 +204,7 @@ export function getConfig(overrides = {}) {
 
     cliPath: resolve(installDir, './hooks/scripts/observe_cli.mjs'),
     logLevel: (overrides.logLevel || process.env.AGENTS_OBSERVE_LOG_LEVEL || 'warn').toLowerCase(),
-    logsDir: resolve(installDir, process.env.AGENTS_OBSERVE_LOGS_DIR || `${localDataRootDir}/logs`),
+    logsDir: resolve(installDir, process.env.AGENTS_OBSERVE_LOGS_DIR || join(localDataRootDir, 'logs')),
 
     /** Allowed server callbacks array */
     allowedCallbacks,

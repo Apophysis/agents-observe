@@ -16,9 +16,9 @@ describe('resolveHostDbPath (issue #21)', () => {
   })
 
   test('falls back to the resolved DB path in local mode (no host path)', () => {
-    expect(resolveHostDbPath('', '/home/me/data/observe.db')).toBe('/home/me/data/observe.db')
+    expect(resolveHostDbPath('', '/home/me/data/observe.db')).toBe(resolve('/home/me/data/observe.db'))
     expect(resolveHostDbPath(undefined, '/home/me/data/observe.db')).toBe(
-      '/home/me/data/observe.db',
+      resolve('/home/me/data/observe.db'),
     )
   })
 

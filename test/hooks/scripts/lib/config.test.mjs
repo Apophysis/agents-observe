@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve, isAbsolute } from 'node:path'
 
 // Snapshot and restore all env vars we touch
 const envKeys = [
@@ -110,7 +110,7 @@ describe('config', () => {
 
   it('exposes installDir as an absolute path', async () => {
     const cfg = await loadConfig()
-    expect(cfg.installDir.startsWith('/')).toBe(true)
+    expect(isAbsolute(cfg.installDir)).toBe(true)
   })
 
   // --- Runtime ---
@@ -207,7 +207,7 @@ describe('config', () => {
 
   it('derives dataDir as localDataRootDir/data', async () => {
     const cfg = await loadConfig()
-    expect(cfg.dataDir).toBe(`${cfg.localDataRootDir}/data`)
+    expect(cfg.dataDir).toBe(join(cfg.localDataRootDir, 'data'))
   })
 
   it('uses AGENTS_OBSERVE_LOCAL_DATA_ROOT when set', async () => {
@@ -225,15 +225,15 @@ describe('config', () => {
     process.env.CLAUDE_PLUGIN_DATA = '/plugin/dir/agents-observe'
     const cfg = await loadConfig()
     expect(cfg.localDataRootDir).toBe('/plugin/dir/agents-observe')
-    expect(cfg.dataDir).toBe('/plugin/dir/agents-observe/data')
-    expect(cfg.logsDir).toBe('/plugin/dir/agents-observe/logs')
-    expect(cfg.serverPortFile).toBe('/plugin/dir/agents-observe/server-port')
+    expect(cfg.dataDir).toBe(join('/plugin/dir/agents-observe', 'data'))
+    expect(cfg.logsDir).toBe(resolve('/plugin/dir/agents-observe', 'logs'))
+    expect(cfg.serverPortFile).toBe(join('/plugin/dir/agents-observe', 'server-port'))
   })
 
   it('falls back to $HOME/.agents-observe when CLAUDE_PLUGIN_DATA points to wrong plugin', async () => {
     process.env.CLAUDE_PLUGIN_DATA = '/plugin/some-other-plugin/data'
     const cfg = await loadConfig()
-    expect(cfg.localDataRootDir).toBe(`${process.env.HOME}/.agents-observe`)
+    expect(cfg.localDataRootDir).toBe(join(process.env.HOME, '.agents-observe'))
   })
 
   it('defaults localDataRootDir to $HOME/.agents-observe when not a plugin', async () => {
@@ -241,7 +241,7 @@ describe('config', () => {
     // version-scoped plugin cache dir and gets orphaned on every plugin
     // upgrade — see GitHub issue #17. The stable per-user path survives.
     const cfg = await loadConfig()
-    expect(cfg.localDataRootDir).toBe(`${process.env.HOME}/.agents-observe`)
+    expect(cfg.localDataRootDir).toBe(join(process.env.HOME, '.agents-observe'))
   })
 
   it('flags usingDefaultDataDir true when AGENTS_OBSERVE_LOCAL_DATA_ROOT is unset', async () => {
@@ -259,13 +259,13 @@ describe('config', () => {
 
   it('derives logsDir from localDataRootDir', async () => {
     const cfg = await loadConfig()
-    expect(cfg.logsDir).toBe(`${cfg.localDataRootDir}/logs`)
+    expect(cfg.logsDir).toBe(join(cfg.localDataRootDir, 'logs'))
   })
 
   it('prefers AGENTS_OBSERVE_LOGS_DIR over localDataRootDir', async () => {
     process.env.AGENTS_OBSERVE_LOGS_DIR = '/custom/logs'
     const cfg = await loadConfig()
-    expect(cfg.logsDir).toBe('/custom/logs')
+    expect(cfg.logsDir).toBe(resolve('/custom/logs'))
   })
 
   // --- Log level ---
@@ -501,7 +501,7 @@ describe('getServerEnv', () => {
     const cfg = mod.getConfig({ runtime: 'docker' })
     const env = mod.getServerEnv(cfg)
 
-    expect(env.AGENTS_OBSERVE_HOST_DB_PATH).toBe(`${cfg.dataDir}/observe.db`)
+    expect(env.AGENTS_OBSERVE_HOST_DB_PATH).toBe(join(cfg.dataDir, 'observe.db'))
     // Container-side DB_PATH is unchanged.
     expect(env.AGENTS_OBSERVE_DB_PATH).toBe('/data/observe.db')
   })
@@ -514,7 +514,7 @@ describe('getServerEnv', () => {
     expect(env.AGENTS_OBSERVE_SERVER_PORT).toBe(cfg.serverPort)
     expect(env.AGENTS_OBSERVE_DB_PATH).toContain(cfg.dataDir)
     expect(env.AGENTS_OBSERVE_DB_PATH).toContain('observe.db')
-    expect(env.AGENTS_OBSERVE_CLIENT_DIST_PATH).toContain('app/client/dist')
+    expect(env.AGENTS_OBSERVE_CLIENT_DIST_PATH).toContain(join('app', 'client', 'dist'))
     expect(env.AGENTS_OBSERVE_CLIENT_DIST_PATH).toContain(cfg.installDir)
     expect(env.AGENTS_OBSERVE_RUNTIME).toBe('local')
     // In local mode the server falls back to DB_PATH, so HOST_DB_PATH
@@ -621,9 +621,9 @@ describe('getServerEnv — transcript-stats env vars', () => {
     const env = mod.getServerEnv(mod.getConfig({ runtime: 'docker' }))
     expect(env.AGENTS_OBSERVE_TRANSCRIPT_STATS).toBe('1')
     // Defaults: ~/.claude/projects and ~/.codex/sessions.
-    expect(env.AGENTS_OBSERVE_TRANSCRIPT_CLAUDE_HOST_BASE).toMatch(/\.claude\/projects$/)
+    expect(env.AGENTS_OBSERVE_TRANSCRIPT_CLAUDE_HOST_BASE).toMatch(/\.claude[\\/]projects$/)
     expect(env.AGENTS_OBSERVE_TRANSCRIPT_CLAUDE_CONTAINER_BASE).toBe('/host/.claude/projects')
-    expect(env.AGENTS_OBSERVE_TRANSCRIPT_CODEX_HOST_BASE).toMatch(/\.codex\/sessions$/)
+    expect(env.AGENTS_OBSERVE_TRANSCRIPT_CODEX_HOST_BASE).toMatch(/\.codex[\\/]sessions$/)
     expect(env.AGENTS_OBSERVE_TRANSCRIPT_CODEX_CONTAINER_BASE).toBe('/host/.codex/sessions')
   })
 

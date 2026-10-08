@@ -11,6 +11,23 @@ describe('resolveTranscriptPath', () => {
     )
   })
 
+  test('translates Windows backslash paths to the container path', () => {
+    const base = { host: 'C:\\Users\\joe\\.claude\\projects', container: '/host/.claude/projects' }
+    expect(resolveTranscriptPath('C:\\Users\\joe\\.claude\\projects\\p\\s.jsonl', [base])).toBe(
+      '/host/.claude/projects/p/s.jsonl',
+    )
+    expect(resolveTranscriptPath('C:\\Users\\joe\\.claude\\projects-other\\s.jsonl', [base])).toBe(
+      'C:\\Users\\joe\\.claude\\projects-other\\s.jsonl',
+    )
+  })
+
+  test('matches Windows drive letters case-insensitively', () => {
+    const base = { host: 'C:\\Users\\joe\\.claude\\projects', container: '/host/.claude/projects' }
+    expect(resolveTranscriptPath('c:\\users\\joe\\.claude\\projects\\p\\s.jsonl', [base])).toBe(
+      '/host/.claude/projects/p/s.jsonl',
+    )
+  })
+
   test('skips bases with empty host or container (partial config)', () => {
     expect(
       resolveTranscriptPath('/Users/joe/.claude/projects/foo/bar.jsonl', [

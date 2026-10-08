@@ -169,6 +169,8 @@ describe('GET /api/sessions/:sessionId/transcript-stats', () => {
 
   test('returns 403 file_unreadable when EACCES (best-effort, skipped if cannot chmod)', async () => {
     const path = writeFixture()
+    // chmod 000 does not block reads on Windows, so skip there.
+    if (process.platform === 'win32') return
     try {
       chmodSync(path, 0o000)
     } catch {
