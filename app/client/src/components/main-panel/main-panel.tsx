@@ -8,6 +8,7 @@ import { ScopeBar } from './scope-bar'
 import { EventFilterBar } from './event-filter-bar'
 import { ActivityTimeline } from '@/components/timeline/activity-timeline'
 import { EventStream } from '@/components/event-stream/event-stream'
+import { CommsGraph } from '@/components/comms-graph/comms-graph'
 import { HomePage } from './home-page'
 import { ProjectPage } from './project-page'
 import { useRegionShortcuts } from '@/hooks/use-region-shortcuts'
@@ -63,6 +64,35 @@ function RouteNotFound({ target }: { target: string }) {
   )
 }
 
+// Timeline / Graph switch for the session body. Timeline is the default.
+function ViewToggle() {
+  const mode = useUIStore((s) => s.sessionViewMode)
+  const setMode = useUIStore((s) => s.setSessionViewMode)
+  const options: Array<['timeline' | 'graph', string]> = [
+    ['timeline', 'Timeline'],
+    ['graph', 'Graph'],
+  ]
+  return (
+    <div className="flex items-center gap-1 px-3 py-1 border-b border-border" role="tablist">
+      {options.map(([value, label]) => (
+        <button
+          key={value}
+          role="tab"
+          aria-selected={mode === value}
+          onClick={() => setMode(value)}
+          className={`px-2 py-0.5 text-xs rounded cursor-pointer ${
+            mode === value
+              ? 'bg-accent text-accent-foreground'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function SessionView({ sessionId, projectId }: { sessionId: string; projectId: number | null }) {
   useRegionShortcuts()
   const { data: sessions } = useSessions(projectId)
@@ -70,6 +100,7 @@ function SessionView({ sessionId, projectId }: { sessionId: string; projectId: n
   const eventsQuery = useEffectiveEvents(effectiveSessionId)
   const rawEvents = eventsQuery.data
   const agents = useAgents(effectiveSessionId, rawEvents)
+  const viewMode = useUIStore((s) => s.sessionViewMode)
 
   return (
     <EventProcessingProvider rawEvents={rawEvents} agents={agents}>
@@ -77,8 +108,15 @@ function SessionView({ sessionId, projectId }: { sessionId: string; projectId: n
         <SessionBreadcrumb />
         <ScopeBar />
         <EventFilterBar />
-        <ActivityTimeline />
-        <EventStream key={sessionId} />
+        <ViewToggle />
+        {viewMode === 'graph' ? (
+          <CommsGraph events={rawEvents} agents={agents} />
+        ) : (
+          <>
+            <ActivityTimeline />
+            <EventStream key={sessionId} />
+          </>
+        )}
       </div>
     </EventProcessingProvider>
   )

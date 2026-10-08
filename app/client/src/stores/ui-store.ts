@@ -204,6 +204,11 @@ interface UIState {
   clearAllFilters: () => void
   setSearchQuery: (query: string) => void
 
+  // Session view mode: the activity timeline (default) or the per-session
+  // communication graph. In-memory only so a reload returns to the timeline.
+  sessionViewMode: 'timeline' | 'graph'
+  setSessionViewMode: (mode: 'timeline' | 'graph') => void
+
   timelineHeight: number
   timeRange: TimeRange
   setTimelineHeight: (height: number) => void
@@ -626,6 +631,9 @@ export const useUIStore = create<UIState>((set, get) => ({
     })),
   clearAllFilters: () => set({ activePrimaryFilters: [], activeSecondaryFilters: [] }),
   setSearchQuery: (query) => set({ searchQuery: query }),
+
+  sessionViewMode: 'timeline',
+  setSessionViewMode: (mode) => set({ sessionViewMode: mode }),
 
   timelineHeight: 150,
   timeRange: '5m',
