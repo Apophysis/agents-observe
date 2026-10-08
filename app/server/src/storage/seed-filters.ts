@@ -121,6 +121,24 @@ export const SEED_FILTERS: SeedFilter[] = [
     config: { color: '#0891b2' }, // cyan
   },
   {
+    id: 'default-needs-input',
+    name: 'Needs input',
+    pillName: 'Needs input',
+    display: 'primary',
+    combinator: 'or',
+    // Payload patterns run against JSON.stringify(rawEvent), so the
+    // Notification type appears as `"notification_type":"<type>"`.
+    // idle_prompt is deliberately not matched.
+    patterns: [
+      { target: 'hook', regex: '^PermissionRequest$' },
+      {
+        target: 'payload',
+        regex: '"notification_type":\\s*"(permission_prompt|agent_needs_input)"',
+      },
+    ],
+    config: { color: '#d97706' }, // amber
+  },
+  {
     id: 'default-notifications',
     name: 'Notifications',
     pillName: 'Notifications',
