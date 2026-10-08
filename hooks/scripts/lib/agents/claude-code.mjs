@@ -85,6 +85,7 @@ export function getSessionInfo(args, { log }) {
 
   let slug = null
   let branch = null
+  let title = null
 
   let pos = 0
   while (pos < content.length) {
@@ -96,7 +97,8 @@ export function getSessionInfo(args, { log }) {
     // Cheap pre-check: only parse lines that could contain what we want.
     const hasSlug = slug === null && line.includes('"slug"')
     const hasBranch = branch === null && line.includes('"gitBranch"')
-    if (!hasSlug && !hasBranch) continue
+    const hasTitle = title === null && line.includes('"type":"user"')
+    if (!hasSlug && !hasBranch && !hasTitle) continue
 
     let entry
     try {
@@ -110,17 +112,44 @@ export function getSessionInfo(args, { log }) {
     if (branch === null && typeof entry.gitBranch === 'string' && entry.gitBranch) {
       branch = entry.gitBranch
     }
-    if (slug !== null && branch !== null) break
+    if (title === null) title = titleFromEntry(entry)
+    if (slug !== null && branch !== null && title !== null) break
   }
 
-  if (slug === null && branch === null) {
-    log.debug(`claude-code.getSessionInfo: no slug or gitBranch in ${transcriptPath}`)
+  if (slug === null && branch === null && title === null) {
+    log.debug(`claude-code.getSessionInfo: no slug, gitBranch or prompt in ${transcriptPath}`)
   } else {
-    log.debug(`claude-code.getSessionInfo: slug=${slug} branch=${branch}`)
+    log.debug(`claude-code.getSessionInfo: slug=${slug} branch=${branch} title=${title}`)
   }
 
   return {
     slug,
     git: { branch, repository_url: null },
+    title,
   }
+}
+
+const TITLE_MAX = 48
+
+/**
+ * Short session title from the first real user prompt: the first
+ * non-empty line, hook/system blocks stripped, cut at a word boundary.
+ * Returns null for meta entries, sidechains, slash-command echoes and
+ * anything that is empty once stripped.
+ */
+export function titleFromEntry(entry) {
+  if (entry?.type !== 'user' || entry.isMeta || entry.isSidechain) return null
+  const c = entry.message?.content
+  let text = typeof c === 'string' ? c : null
+  if (Array.isArray(c)) text = c.find((b) => b?.type === 'text' && typeof b.text === 'string')?.text
+  if (!text) return null
+  text = text.replace(/<system-reminder[\s\S]*?<\/system-reminder[^>]*>/g, '').trim()
+  if (!text || text.startsWith('<command-') || text.startsWith('<local-command')) return null
+  // Skip lines that are only a wrapper tag (e.g. <pasted_content id="..">).
+  const first = text.split('\n').find((l) => l.trim() && !/^\s*<\/?[\w-]+[^>]*>\s*$/.test(l))
+  const flat = first?.replace(/\s+/g, ' ').trim()
+  if (!flat) return null
+  if (flat.length <= TITLE_MAX) return flat
+  const cut = flat.slice(0, TITLE_MAX)
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(' '), 20))}…`
 }

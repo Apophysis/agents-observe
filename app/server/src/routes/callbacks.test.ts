@@ -72,6 +72,34 @@ describe('callback routes', () => {
       })
     })
 
+    test('detached HEAD falls back to the prompt title instead of "HEAD"', async () => {
+      const res = await app.request('/api/callbacks/session-info/019d9d13-24c6-76f0', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug: null,
+          git: { branch: 'HEAD', repository_url: null },
+          title: 'Fix the login redirect',
+          agentClass: 'claude-code',
+        }),
+      })
+      expect(res.status).toBe(200)
+      expect(updateSessionSlug).toHaveBeenCalledWith(
+        '019d9d13-24c6-76f0',
+        'Fix the login redirect:019d9d13:claude',
+      )
+    })
+
+    test('detached HEAD with no title leaves the slug unset so a later event retries', async () => {
+      const res = await app.request('/api/callbacks/session-info/019d9d13-24c6-76f0', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: null, git: { branch: 'HEAD', repository_url: null } }),
+      })
+      expect(res.status).toBe(200)
+      expect(updateSessionSlug).not.toHaveBeenCalled()
+    })
+
     test('auto-names slug with trailing :codex when agent class is codex', async () => {
       const res = await app.request('/api/callbacks/session-info/019d9d13-24c6-76f0', {
         method: 'POST',

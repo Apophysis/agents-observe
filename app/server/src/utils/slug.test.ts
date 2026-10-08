@@ -6,6 +6,11 @@ describe('deriveSlugFromPath', () => {
     expect(deriveSlugFromPath('/Users/joe/Development/my-app')).toBe('my-app')
   })
 
+  test('takes the last segment of a Windows path', () => {
+    expect(deriveSlugFromPath('C:\\Users\\joe\\OneDrive\\Bureaublad')).toBe('bureaublad')
+    expect(deriveSlugFromPath('C:\\Users\\joe\\app\\')).toBe('app')
+  })
+
   test('lowercases the slug', () => {
     expect(deriveSlugFromPath('/Users/joe/.claude/projects/-MyApp')).toBe('myapp')
   })
