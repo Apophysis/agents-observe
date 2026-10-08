@@ -6,6 +6,7 @@
 // built-in default. Never throws; bad input falls back to the default.
 
 import { Hono } from 'hono'
+import { config } from '../config'
 import { resolve, dirname } from 'path'
 import { readFileSync } from 'fs'
 import { fileURLToPath } from 'url'
@@ -53,7 +54,7 @@ function parseStages(raw: string): StagesConfig | null {
 }
 
 function candidatePaths(): string[] {
-  const override = process.env.AGENTS_OBSERVE_STAGES_PATH
+  const override = config.stagesPath
   if (override) return [override]
   const dir = dirname(fileURLToPath(import.meta.url))
   return [

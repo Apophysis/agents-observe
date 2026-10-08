@@ -2,6 +2,7 @@ import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { config } from '../config'
 import router, { loadStages, DEFAULT_STAGES } from './stages'
 
 describe('stages', () => {
@@ -9,11 +10,11 @@ describe('stages', () => {
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), 'stages-route-'))
-    delete process.env.AGENTS_OBSERVE_STAGES_PATH
+    config.stagesPath = ''
   })
 
   afterEach(() => {
-    delete process.env.AGENTS_OBSERVE_STAGES_PATH
+    config.stagesPath = ''
     vi.restoreAllMocks()
     rmSync(tmpDir, { recursive: true, force: true })
   })
@@ -33,21 +34,21 @@ describe('stages', () => {
   test('env override loads the given file and keeps extra fields', () => {
     const p = join(tmpDir, 's.json')
     writeFileSync(p, JSON.stringify({ main: 'Lead', stages: { x: { label: 'X', color: 'red' } } }))
-    process.env.AGENTS_OBSERVE_STAGES_PATH = p
+    config.stagesPath = p
     expect(loadStages()).toEqual({ main: 'Lead', stages: { x: { label: 'X', color: 'red' } } })
   })
 
   test('invalid JSON falls back to default and warns', () => {
     const p = join(tmpDir, 'bad.json')
     writeFileSync(p, '{ not json')
-    process.env.AGENTS_OBSERVE_STAGES_PATH = p
+    config.stagesPath = p
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     expect(loadStages()).toEqual(DEFAULT_STAGES)
     expect(warn).toHaveBeenCalled()
   })
 
   test('missing file falls back to default and warns', () => {
-    process.env.AGENTS_OBSERVE_STAGES_PATH = join(tmpDir, 'nope.json')
+    config.stagesPath = join(tmpDir, 'nope.json')
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     expect(loadStages()).toEqual(DEFAULT_STAGES)
     expect(warn).toHaveBeenCalled()

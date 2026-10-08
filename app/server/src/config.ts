@@ -66,6 +66,8 @@ export const config = {
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean),
+  // Optional path to a stage mapping JSON file overriding config/stages.json.
+  stagesPath: process.env.AGENTS_OBSERVE_STAGES_PATH || '',
   logLevel,
   verbose: logLevel === 'debug' || logLevel === 'trace',
   dbPath: resolve(process.env.AGENTS_OBSERVE_DB_PATH || '../../data/observe.db'),
