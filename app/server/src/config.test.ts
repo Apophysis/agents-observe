@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vitest'
+import { describe, test, expect, vi, afterEach } from 'vitest'
 import { resolve } from 'path'
 import { resolveHostDbPath } from './config'
 
@@ -24,5 +24,26 @@ describe('resolveHostDbPath (issue #21)', () => {
 
   test('resolves a relative fallback DB path', () => {
     expect(resolveHostDbPath('', 'data/observe.db')).toBe(resolve('data/observe.db'))
+  })
+})
+
+describe('bindHost default', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.resetModules()
+  })
+
+  test('defaults to loopback when AGENTS_OBSERVE_BIND_HOST is unset', async () => {
+    vi.stubEnv('AGENTS_OBSERVE_BIND_HOST', '')
+    vi.resetModules()
+    const { config } = await import('./config')
+    expect(config.bindHost).toBe('127.0.0.1')
+  })
+
+  test('honors AGENTS_OBSERVE_BIND_HOST (docker sets 0.0.0.0)', async () => {
+    vi.stubEnv('AGENTS_OBSERVE_BIND_HOST', '0.0.0.0')
+    vi.resetModules()
+    const { config } = await import('./config')
+    expect(config.bindHost).toBe('0.0.0.0')
   })
 })
