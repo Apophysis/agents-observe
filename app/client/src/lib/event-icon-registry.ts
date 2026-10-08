@@ -51,53 +51,65 @@ export interface EventIconEntry {
   defaultColor: { iconColor: string; dotColor: string }
 }
 
+// tool calls
 const BLUE = {
-  iconColor: 'text-blue-600 dark:text-blue-400',
-  dotColor: 'bg-blue-600 dark:bg-blue-500',
+  iconColor: 'text-series-1',
+  dotColor: 'bg-series-1',
 }
+// user prompts
 const GREEN = {
-  iconColor: 'text-green-600 dark:text-green-400',
-  dotColor: 'bg-green-600 dark:bg-green-500',
+  iconColor: 'text-series-5',
+  dotColor: 'bg-series-5',
 }
+// session lifecycle, neutral
 const YELLOW = {
-  iconColor: 'text-yellow-600 dark:text-yellow-400',
-  dotColor: 'bg-yellow-600 dark:bg-yellow-500',
+  iconColor: 'text-muted-foreground',
+  dotColor: 'bg-muted-foreground',
 }
+// failures (status)
 const RED = {
-  iconColor: 'text-red-600 dark:text-red-400',
-  dotColor: 'bg-red-600 dark:bg-red-500',
+  iconColor: 'text-status-critical',
+  dotColor: 'bg-status-critical',
 }
+// agents and subagents
 const PURPLE = {
-  iconColor: 'text-purple-600 dark:text-purple-400',
-  dotColor: 'bg-purple-600 dark:bg-purple-500',
+  iconColor: 'text-series-7',
+  dotColor: 'bg-series-7',
 }
+// MCP and tasks
 const CYAN = {
-  iconColor: 'text-cyan-600 dark:text-cyan-400',
-  dotColor: 'bg-cyan-600 dark:bg-cyan-500',
+  iconColor: 'text-series-3',
+  dotColor: 'bg-series-3',
 }
+// needs input (status)
 const ROSE = {
-  iconColor: 'text-rose-600 dark:text-rose-400',
-  dotColor: 'bg-rose-600 dark:bg-rose-500',
+  iconColor: 'text-status-warning',
+  dotColor: 'bg-status-warning',
 }
+// notifications, neutral
 const SKY = {
-  iconColor: 'text-sky-600 dark:text-sky-400',
-  dotColor: 'bg-sky-600 dark:bg-sky-500',
+  iconColor: 'text-muted-foreground',
+  dotColor: 'bg-muted-foreground',
 }
+// config and files, neutral
 const SLATE = {
-  iconColor: 'text-slate-600 dark:text-slate-400',
-  dotColor: 'bg-slate-600 dark:bg-slate-500',
+  iconColor: 'text-muted-foreground',
+  dotColor: 'bg-muted-foreground',
 }
+// compaction, neutral
 const GRAY = {
-  iconColor: 'text-gray-500 dark:text-gray-400',
-  dotColor: 'bg-gray-500 dark:bg-gray-400',
+  iconColor: 'text-muted-foreground',
+  dotColor: 'bg-muted-foreground',
 }
+// elicitation asks the user (status)
 const INDIGO = {
-  iconColor: 'text-indigo-600 dark:text-indigo-400',
-  dotColor: 'bg-indigo-600 dark:bg-indigo-500',
+  iconColor: 'text-status-warning',
+  dotColor: 'bg-status-warning',
 }
+// worktrees
 const TEAL = {
-  iconColor: 'text-teal-600 dark:text-teal-400',
-  dotColor: 'bg-teal-600 dark:bg-teal-500',
+  iconColor: 'text-series-3',
+  dotColor: 'bg-series-3',
 }
 const MUTED = {
   iconColor: 'text-muted-foreground',

@@ -69,54 +69,56 @@ export interface AgentColorClasses {
   dot: string
 }
 
+// Theme series tokens (see index.css): one validated palette for light and
+// dark, so agent identity reads the same everywhere.
 const AGENT_COLORS: AgentColorClasses[] = [
   {
-    text: 'text-green-700 dark:text-green-400 border-green-600/50 dark:border-green-500/50',
-    textOnly: 'text-green-700 dark:text-green-400',
-    border: 'border-green-600/50 dark:border-green-500/50',
-    dot: 'bg-green-600 dark:bg-green-500',
+    text: 'text-series-1 border-series-1/50',
+    textOnly: 'text-series-1',
+    border: 'border-series-1/50',
+    dot: 'bg-series-1',
   },
   {
-    text: 'text-blue-700 dark:text-blue-400 border-blue-600/50 dark:border-blue-500/50',
-    textOnly: 'text-blue-700 dark:text-blue-400',
-    border: 'border-blue-600/50 dark:border-blue-500/50',
-    dot: 'bg-blue-600 dark:bg-blue-500',
+    text: 'text-series-2 border-series-2/50',
+    textOnly: 'text-series-2',
+    border: 'border-series-2/50',
+    dot: 'bg-series-2',
   },
   {
-    text: 'text-purple-700 dark:text-purple-400 border-purple-600/50 dark:border-purple-500/50',
-    textOnly: 'text-purple-700 dark:text-purple-400',
-    border: 'border-purple-600/50 dark:border-purple-500/50',
-    dot: 'bg-purple-600 dark:bg-purple-500',
+    text: 'text-series-3 border-series-3/50',
+    textOnly: 'text-series-3',
+    border: 'border-series-3/50',
+    dot: 'bg-series-3',
   },
   {
-    text: 'text-amber-700 dark:text-amber-400 border-amber-600/50 dark:border-amber-500/50',
-    textOnly: 'text-amber-700 dark:text-amber-400',
-    border: 'border-amber-600/50 dark:border-amber-500/50',
-    dot: 'bg-amber-600 dark:bg-amber-500',
+    text: 'text-series-4 border-series-4/50',
+    textOnly: 'text-series-4',
+    border: 'border-series-4/50',
+    dot: 'bg-series-4',
   },
   {
-    text: 'text-cyan-700 dark:text-cyan-400 border-cyan-600/50 dark:border-cyan-500/50',
-    textOnly: 'text-cyan-700 dark:text-cyan-400',
-    border: 'border-cyan-600/50 dark:border-cyan-500/50',
-    dot: 'bg-cyan-600 dark:bg-cyan-500',
+    text: 'text-series-5 border-series-5/50',
+    textOnly: 'text-series-5',
+    border: 'border-series-5/50',
+    dot: 'bg-series-5',
   },
   {
-    text: 'text-rose-700 dark:text-rose-400 border-rose-600/50 dark:border-rose-500/50',
-    textOnly: 'text-rose-700 dark:text-rose-400',
-    border: 'border-rose-600/50 dark:border-rose-500/50',
-    dot: 'bg-rose-600 dark:bg-rose-500',
+    text: 'text-series-6 border-series-6/50',
+    textOnly: 'text-series-6',
+    border: 'border-series-6/50',
+    dot: 'bg-series-6',
   },
   {
-    text: 'text-emerald-700 dark:text-emerald-400 border-emerald-600/50 dark:border-emerald-500/50',
-    textOnly: 'text-emerald-700 dark:text-emerald-400',
-    border: 'border-emerald-600/50 dark:border-emerald-500/50',
-    dot: 'bg-emerald-600 dark:bg-emerald-500',
+    text: 'text-series-7 border-series-7/50',
+    textOnly: 'text-series-7',
+    border: 'border-series-7/50',
+    dot: 'bg-series-7',
   },
   {
-    text: 'text-orange-700 dark:text-orange-400 border-orange-600/50 dark:border-orange-500/50',
-    textOnly: 'text-orange-700 dark:text-orange-400',
-    border: 'border-orange-600/50 dark:border-orange-500/50',
-    dot: 'bg-orange-600 dark:bg-orange-500',
+    text: 'text-series-8 border-series-8/50',
+    textOnly: 'text-series-8',
+    border: 'border-series-8/50',
+    dot: 'bg-series-8',
   },
 ]
 

@@ -36,7 +36,7 @@ export const SEED_FILTERS: SeedFilter[] = [
     patterns: [
       { target: 'hook', regex: '^(PreToolUse|PostToolUse|PostToolUseFailure|PostToolBatch)$' },
     ],
-    config: { color: '#475569' }, // slate
+    config: { color: '#7b8494' },
   },
   {
     id: 'default-prompts',
@@ -45,7 +45,7 @@ export const SEED_FILTERS: SeedFilter[] = [
     display: 'primary',
     combinator: 'and',
     patterns: [{ target: 'hook', regex: '^(UserPromptSubmit|UserPromptExpansion)$' }],
-    config: { color: '#059669' }, // emerald
+    config: { color: '#c8457a' },
   },
   {
     id: 'default-tools',
@@ -64,7 +64,7 @@ export const SEED_FILTERS: SeedFilter[] = [
       { target: 'tool', regex: '^.+' },
       { target: 'tool', regex: '^(Agent$|TaskCreate$|TaskUpdate$|mcp__)', negate: true },
     ],
-    config: { color: '#2563eb' }, // blue
+    config: { color: '#3a7fdc' },
   },
   {
     id: 'default-agents',
@@ -76,7 +76,7 @@ export const SEED_FILTERS: SeedFilter[] = [
       { target: 'hook', regex: '^(SubagentStart|TeammateIdle)$' },
       { target: 'tool', regex: '^Agent$' },
     ],
-    config: { color: '#7c3aed' }, // violet
+    config: { color: '#7a6ee0' },
   },
   {
     id: 'default-tasks',
@@ -88,7 +88,7 @@ export const SEED_FILTERS: SeedFilter[] = [
       { target: 'hook', regex: '^(TaskCreated|TaskCompleted)$' },
       { target: 'tool', regex: '^Task(Create|Update)$' },
     ],
-    config: { color: '#7c3aed' }, // violet
+    config: { color: '#7a6ee0' },
   },
   {
     id: 'default-mcp',
@@ -100,7 +100,7 @@ export const SEED_FILTERS: SeedFilter[] = [
       { target: 'hook', regex: '^(Elicitation|ElicitationResult)$' },
       { target: 'tool', regex: '^mcp__' },
     ],
-    config: { color: '#2563eb' }, // blue
+    config: { color: '#13917a' },
   },
   {
     id: 'default-session',
@@ -109,7 +109,7 @@ export const SEED_FILTERS: SeedFilter[] = [
     display: 'primary',
     combinator: 'and',
     patterns: [{ target: 'hook', regex: '^(Setup|SessionStart|SessionEnd)$' }],
-    config: { color: '#6b7280' }, // gray
+    config: { color: '#7b8494' },
   },
   {
     id: 'default-permissions',
@@ -118,7 +118,7 @@ export const SEED_FILTERS: SeedFilter[] = [
     display: 'primary',
     combinator: 'and',
     patterns: [{ target: 'hook', regex: '^PermissionRequest$' }],
-    config: { color: '#0891b2' }, // cyan
+    config: { color: '#d4581f' },
   },
   {
     id: 'default-needs-input',
@@ -136,7 +136,7 @@ export const SEED_FILTERS: SeedFilter[] = [
         regex: '"notification_type":\\s*"(permission_prompt|agent_needs_input)"',
       },
     ],
-    config: { color: '#d97706' }, // amber
+    config: { color: '#b57700' },
   },
   {
     id: 'default-notifications',
@@ -145,7 +145,7 @@ export const SEED_FILTERS: SeedFilter[] = [
     display: 'primary',
     combinator: 'and',
     patterns: [{ target: 'hook', regex: '^Notification$' }],
-    config: { color: '#0891b2' }, // cyan
+    config: { color: '#7b8494' },
   },
   {
     id: 'default-stop',
@@ -154,7 +154,7 @@ export const SEED_FILTERS: SeedFilter[] = [
     display: 'primary',
     combinator: 'and',
     patterns: [{ target: 'hook', regex: '^(Stop|StopFailure|SubagentStop|stop_hook_summary)$' }],
-    config: { color: '#6b7280' }, // gray
+    config: { color: '#7b8494' },
   },
   {
     id: 'default-compaction',
@@ -163,7 +163,7 @@ export const SEED_FILTERS: SeedFilter[] = [
     display: 'primary',
     combinator: 'and',
     patterns: [{ target: 'hook', regex: '^(PreCompact|PostCompact)$' }],
-    config: { color: '#6b7280' }, // gray
+    config: { color: '#7b8494' },
   },
   {
     id: 'default-config',
@@ -174,7 +174,7 @@ export const SEED_FILTERS: SeedFilter[] = [
     patterns: [
       { target: 'hook', regex: '^(InstructionsLoaded|ConfigChange|CwdChanged|FileChanged)$' },
     ],
-    config: { color: '#6b7280' }, // gray
+    config: { color: '#7b8494' },
   },
   {
     id: 'default-errors',
@@ -186,6 +186,6 @@ export const SEED_FILTERS: SeedFilter[] = [
       { target: 'payload', regex: '"is_error":\\s*true' },
       { target: 'payload', regex: '"error":\\s*"[^"]+' },
     ],
-    config: { color: '#e11d48' }, // rose
+    config: { color: '#d03b3b' },
   },
 ]

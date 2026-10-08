@@ -103,13 +103,13 @@ describe('buildAgentColorMap', () => {
 describe('getAgentColor', () => {
   it('should return the first color for index 0', () => {
     const color = getAgentColor(0)
-    expect(color.text).toContain('green')
-    expect(color.dot).toContain('green')
+    expect(color.text).toContain('series-1')
+    expect(color.dot).toContain('series-1')
   })
 
   it('should return the second color for index 1', () => {
     const color = getAgentColor(1)
-    expect(color.text).toContain('blue')
+    expect(color.text).toContain('series-2')
   })
 
   it('should cycle colors when index exceeds palette length', () => {
@@ -146,8 +146,8 @@ describe('getAgentColorById', () => {
 
     const colorA = getAgentColorById('agent-a', map)
     const colorB = getAgentColorById('agent-b', map)
-    expect(colorA.text).toContain('green') // index 0
-    expect(colorB.text).toContain('purple') // index 2
+    expect(colorA.text).toContain('series-1') // index 0
+    expect(colorB.text).toContain('series-3') // index 2
   })
 
   it('should default to index 0 for unknown agent ID', () => {
