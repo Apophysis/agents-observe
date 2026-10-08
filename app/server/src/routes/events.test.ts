@@ -525,3 +525,47 @@ describe('POST /api/events — background poll ticks', () => {
     expect(broadcast!.msg.data.agentId).toBe('sess-1:background')
   })
 })
+
+describe('POST /api/events — secret redaction', () => {
+  const secretEnvelope = () => ({
+    agentClass: 'claude-code',
+    sessionId: 'sess-redact',
+    agentId: 'sess-redact',
+    hookName: 'PreToolUse',
+    timestamp: 5000,
+    payload: {
+      tool_name: 'Bash',
+      command: 'curl -H "Authorization: Bearer abcdefgh12345678" https://u:hunter2@h.io',
+      nested: { password: 'topsecretpw', key: 'sk-ant-api03-abcdefghijklmnop1234' },
+      aws: 'AKIAIOSFODNN7EXAMPLE',
+    },
+    _meta: { session: { slug: 'ghp_abcdefghijklmnopqrstuvwxyz0123456789' } },
+  })
+  const leaks = /abcdefgh12345678|hunter2|topsecretpw|sk-ant-api03|AKIAIOSFODNN7|ghp_abcdef/
+
+  test('stored row and broadcast contain only [REDACTED]', async () => {
+    const res = await postEvent(secretEnvelope())
+    expect(res.status).toBe(201)
+
+    const rows = await store.getEventsForSession('sess-redact')
+    expect(rows).toHaveLength(1)
+    const stored = JSON.stringify(rows[0])
+    expect(stored).not.toMatch(leaks)
+    expect(stored).toContain('[REDACTED]')
+
+    const sent = JSON.stringify(sessionBroadcasts[0].msg)
+    expect(sent).not.toMatch(leaks)
+    expect(sent).toContain('[REDACTED]')
+    expect(sessionBroadcasts[0].msg.data.payload.nested.password).toBe('[REDACTED]')
+    expect(sessionBroadcasts[0].msg.data.payload.tool_name).toBe('Bash')
+  })
+
+  test('dedup still works for identical input', async () => {
+    const first = (await (await postEvent(secretEnvelope())).json()) as { id: number }
+    const res = await postEvent(secretEnvelope())
+    const second = (await res.json()) as { id: number; deduplicated?: boolean }
+    expect(second.deduplicated).toBe(true)
+    expect(second.id).toBe(first.id)
+    expect(await store.getEventsForSession('sess-redact')).toHaveLength(1)
+  })
+})

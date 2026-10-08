@@ -20,6 +20,7 @@ import type { EventStore } from '../storage/types'
 import { DuplicateEventSignatureError } from '../storage/types'
 import type { EventEnvelope, ParsedEvent } from '../types'
 import { validateEnvelope, EnvelopeValidationError } from '../parser'
+import { redactEnvelope } from '../services/redact'
 import { resolveProject } from '../services/project-resolver'
 import { computeEventSignature } from '../utils/event-signature'
 import {
@@ -61,7 +62,8 @@ router.post('/events', async (c) => {
   let timestamp: number
   try {
     const validated = validateEnvelope(raw)
-    envelope = validated.envelope
+    // Redact secrets before anything logs, hashes, stores or broadcasts it.
+    envelope = redactEnvelope(validated.envelope)
     timestamp = validated.timestamp
   } catch (err) {
     if (err instanceof EnvelopeValidationError) {
