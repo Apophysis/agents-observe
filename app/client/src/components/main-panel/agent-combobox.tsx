@@ -10,6 +10,7 @@ import { AgentClassIcon, agentClassDisplayName } from '@/components/shared/agent
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { StageBadge } from '@/components/stage-badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   Command,
@@ -208,16 +209,7 @@ export function AgentCombobox() {
                       </div>
                       <div className="flex items-center gap-2 shrink-0 text-[10px] text-muted-foreground">
                         {stageByAgent.get(agent.id) && (
-                          <Badge
-                            variant={
-                              stageByAgent.get(agent.id)!.kind === 'needs-input'
-                                ? 'default'
-                                : 'secondary'
-                            }
-                            className="text-[9px] h-3.5 px-1"
-                          >
-                            {stageByAgent.get(agent.id)!.label}
-                          </Badge>
+                          <StageBadge stage={stageByAgent.get(agent.id)!} />
                         )}
                         <span>{formatStartTime(agent.firstEventAt ?? 0)}</span>
                         <span>{formatRuntime(agent)}</span>
