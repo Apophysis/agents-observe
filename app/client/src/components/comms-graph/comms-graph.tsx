@@ -5,7 +5,7 @@ import { buildCommsGraph, type CommsEdge, type CommsEdgeKind } from '@/lib/comms
 const NODE_W = 132
 const NODE_H = 34
 const COL_GAP = 40
-const ROW_GAP = 90
+const ROW_GAP = 150
 const PAD = 40
 
 // Theme-token colors so the graph reads in both light and dark mode.
@@ -82,6 +82,28 @@ function truncate(s: string, n: number): string {
   return s.length > n ? `${s.slice(0, n - 1)}…` : s
 }
 
+const BOW_STEP = 44
+const KIND_ORDER: CommsEdgeKind[] = ['delegation', 'message', 'result']
+
+const pairKey = (e: CommsEdge) => (e.from <= e.to ? `${e.from}|${e.to}` : `${e.to}|${e.from}`)
+const edgeKey = (e: CommsEdge) => `${e.kind}|${e.from}|${e.to}`
+
+/** Slot per edge within its agent pair: 0 for a lone edge, else centred on 0. */
+function assignSlots(edges: CommsEdge[]): Map<string, Map<string, number>> {
+  const groups = new Map<string, CommsEdge[]>()
+  for (const e of edges) {
+    const list = groups.get(pairKey(e)) ?? []
+    list.push(e)
+    groups.set(pairKey(e), list)
+  }
+  const out = new Map<string, Map<string, number>>()
+  for (const [k, list] of groups) {
+    list.sort((x, y) => KIND_ORDER.indexOf(x.kind) - KIND_ORDER.indexOf(y.kind))
+    out.set(k, new Map(list.map((e, i) => [edgeKey(e), i - (list.length - 1) / 2])))
+  }
+  return out
+}
+
 export function CommsGraph({
   events,
   agents,
@@ -99,6 +121,8 @@ export function CommsGraph({
       ),
     [graph],
   )
+
+  const pairSlots = useMemo(() => assignSlots(graph.edges), [graph])
 
   if (graph.nodes.length === 0) {
     return (
@@ -164,17 +188,29 @@ export function CommsGraph({
             const a = pos.get(e.from)
             const b = pos.get(e.to)
             if (!a || !b) return null
-            const dx = b.x - a.x
-            const dy = b.y - a.y
+            // Edges between the same two agents share one canonical perpendicular
+            // axis and take evenly spaced slots on it, so curves and labels never
+            // stack, whichever direction each edge travels.
+            const slots = pairSlots.get(pairKey(e))!
+            const slot = slots.get(edgeKey(e))!
+            const canonFromA = e.from <= e.to
+            const ca = canonFromA ? a : b
+            const cb = canonFromA ? b : a
+            const dx = cb.x - ca.x
+            const dy = cb.y - ca.y
             const len = Math.hypot(dx, dy) || 1
-            // Perpendicular offset; the reverse direction bows the other way.
-            const bow = 22 + (e.kind === 'message' ? 14 : 0)
+            const bow = slot * BOW_STEP
             const cx = (a.x + b.x) / 2 + (-dy / len) * bow
             const cy = (a.y + b.y) / 2 + (dx / len) * bow
             const p1 = clip(a, { x: cx, y: cy })
             const p2 = clip(b, { x: cx, y: cy })
-            const mx = 0.25 * p1.x + 0.5 * cx + 0.25 * p2.x
-            const my = 0.25 * p1.y + 0.5 * cy + 0.25 * p2.y
+            // Labels sit towards the lower (child) end, where edges from one
+            // parent are furthest apart, staggered by kind so the labels of
+            // edges between the same pair never share a spot.
+            const d = e.kind === 'delegation' ? 0.2 : e.kind === 'message' ? 0.4 : 0.6
+            const t = a.y >= b.y ? d : 1 - d
+            const mx = (1 - t) * (1 - t) * p1.x + 2 * (1 - t) * t * cx + t * t * p2.x
+            const my = (1 - t) * (1 - t) * p1.y + 2 * (1 - t) * t * cy + t * t * p2.y
             const text = e.count > 1 ? `${e.label} x${e.count}` : e.label
             return (
               <g key={`${e.kind}|${e.from}|${e.to}`} className={KIND_TEXT[e.kind]}>
