@@ -39,6 +39,10 @@ COPY VERSION /app/VERSION
 # Copy CHANGELOG for /api/changelog endpoint
 COPY CHANGELOG.md /app/CHANGELOG.md
 
+# Listen on all interfaces inside the container; the host-side port mapping
+# is published on 127.0.0.1 only.
+ENV AGENTS_OBSERVE_BIND_HOST=0.0.0.0
+
 EXPOSE 4981
 
 WORKDIR /app/server

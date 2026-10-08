@@ -5,7 +5,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -25,7 +26,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -35,7 +37,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -46,7 +49,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -56,7 +60,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -66,7 +71,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -76,7 +82,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -86,7 +93,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -96,7 +104,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -106,7 +115,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -116,7 +126,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -126,7 +137,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -136,7 +148,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -146,7 +159,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -156,7 +170,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -166,7 +181,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -176,7 +192,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -186,7 +203,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -196,7 +214,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -206,7 +225,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -216,7 +236,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -226,7 +247,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -236,7 +258,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -246,7 +269,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -256,7 +280,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -266,7 +291,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }
@@ -276,7 +302,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh"
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/hook.sh",
+            "async": true
           }
         ]
       }

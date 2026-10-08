@@ -19,7 +19,12 @@ htmlcov/
 
 # Docker data directory
 /data/
+data/
 /logs/
+*.db
+*.db-wal
+*.db-shm
+*.log
 
 # Security
 .env
