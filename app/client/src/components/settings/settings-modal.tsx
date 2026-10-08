@@ -8,6 +8,7 @@ import { IconSettings } from './icon-settings'
 import { GeneralSettings } from './general-settings'
 import { KeyboardSettings } from './keyboard-settings'
 import { FiltersTab } from './filters-tab'
+import { CostsTab } from './costs-tab'
 import { useUIStore } from '@/stores/ui-store'
 import { useFilterStore } from '@/stores/filter-store'
 import { useFilterDraftStore } from '@/stores/filter-draft-store'
@@ -115,6 +116,7 @@ export function SettingsModal() {
               <TabsTrigger value="projects">Projects</TabsTrigger>
               <TabsTrigger value="labels">Labels</TabsTrigger>
               <TabsTrigger value="sessions">Sessions</TabsTrigger>
+              <TabsTrigger value="costs">Costs</TabsTrigger>
               <TabsTrigger value="keyboard">Keyboard</TabsTrigger>
             </TabsList>
           </div>
@@ -136,6 +138,9 @@ export function SettingsModal() {
           </TabsContent>
           <TabsContent value="sessions" className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 pt-4">
             <SessionsTab />
+          </TabsContent>
+          <TabsContent value="costs" className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 pt-4">
+            <CostsTab />
           </TabsContent>
           {/* Labels tab deliberately skips the outer px-6/pb-6/pt-4
               padding because LabelsModalBody handles its own scrolling

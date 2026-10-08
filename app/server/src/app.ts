@@ -22,6 +22,7 @@ import changelogRouter from './routes/changelog'
 import transcriptStatsRouter from './routes/transcript-stats'
 import modelsRouter from './routes/models'
 import stagesRouter from './routes/stages'
+import costsRouter from './routes/costs'
 
 type Env = {
   Variables: {
@@ -65,6 +66,7 @@ export function createApp(
   app.route('/api', transcriptStatsRouter)
   app.route('/api', modelsRouter)
   app.route('/api', stagesRouter)
+  app.route('/api', costsRouter)
 
   // Global error handler — catches any uncaught exception from a route
   // handler and returns a JSON error response so the UI can surface it
