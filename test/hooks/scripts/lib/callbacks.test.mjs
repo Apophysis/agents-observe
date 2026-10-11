@@ -121,6 +121,7 @@ describe('getSessionInfo callback dispatch', () => {
     expect(received[0]).toEqual({
       slug: 'my-slug',
       git: { branch: 'main', repository_url: null },
+      title: null,
       agentClass: 'claude-code',
       cwd: '/tmp/x',
     })

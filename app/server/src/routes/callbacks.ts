@@ -23,6 +23,9 @@ interface GitInfoPayload {
 interface SessionInfoPayload {
   slug?: string | null
   git?: GitInfoPayload | null
+  // First real user prompt, shortened. Names the session when there is no
+  // usable git branch.
+  title?: string | null
   // Mirrored back from the original request by the hook dispatcher so
   // the server uses exactly what was sent (not a later DB lookup).
   agentClass?: string | null
@@ -56,10 +59,14 @@ router.post('/callbacks/session-info/:sessionId', async (c) => {
         : null
 
     const explicitSlug = typeof data.slug === 'string' && data.slug.trim() ? data.slug.trim() : null
+    const title = typeof data.title === 'string' && data.title.trim() ? data.title.trim() : null
+    // "HEAD" is what git reports for a detached HEAD (or no repo): it names
+    // nothing, so fall back to the first-prompt title instead of "HEAD:<id>".
+    const label = gitBranch && gitBranch !== 'HEAD' ? gitBranch : title
 
     // Nothing useful — reject. Matches the old behavior where missing
     // slug returned 400; callers get an actionable error.
-    if (!explicitSlug && !gitBranch && !gitRepo) {
+    if (!explicitSlug && !gitBranch && !gitRepo && !title) {
       return apiError(c, 400, 'Missing slug and git info')
     }
 
@@ -89,10 +96,10 @@ router.post('/callbacks/session-info/:sessionId', async (c) => {
     const agentShortName = agentClass ? (agentClass.split('-')[0] ?? null) : null
     const slug =
       explicitSlug ??
-      (gitBranch
+      (label
         ? agentShortName
-          ? `${gitBranch}:${uuidPrefix}:${agentShortName}`
-          : `${gitBranch}:${uuidPrefix}`
+          ? `${label}:${uuidPrefix}:${agentShortName}`
+          : `${label}:${uuidPrefix}`
         : null)
     if (slug) {
       await store.updateSessionSlug(sessionId, slug)

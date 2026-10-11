@@ -88,9 +88,17 @@ async function fetchVoid(path: string, init?: RequestInit): Promise<void> {
   }
 }
 
+export interface DailyCosts {
+  days: { date: string; costCents: number; prompts: number; sessions: number }[]
+  totalCents: number
+  unpricedPrompts: number
+  skippedSessions: number
+}
+
 export const api = {
   getProjects: () => fetchJson<Project[]>('/projects'),
   getStages: () => fetchJson<StageMapping>('/stages'),
+  getDailyCosts: (days: number) => fetchJson<DailyCosts>(`/costs/daily?days=${days}`),
   getPendingNotifications: (sinceTs: number) =>
     fetchJson<NotificationPayload[]>(`/notifications?since=${sinceTs}`),
   getRecentSessions: (limit?: number, since?: number) => {

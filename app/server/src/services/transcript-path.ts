@@ -22,11 +22,18 @@ export interface BindMountBase {
  * partial config).
  */
 export function resolveTranscriptPath(hostPath: string, bases: BindMountBase[]): string {
+  // Windows hosts store backslash paths; compare on forward slashes.
+  const norm = (p: string) => p.replaceAll('\\', '/')
+  const path = norm(hostPath)
   for (const { host, container } of bases) {
     if (!host || !container) continue
-    if (hostPath === host) return container
-    if (hostPath.startsWith(host + '/')) {
-      return container + hostPath.slice(host.length)
+    const base = norm(host)
+    // Windows drive letters and paths are case-insensitive.
+    const win = /^[A-Za-z]:\//.test(base)
+    const [p, b] = win ? [path.toLowerCase(), base.toLowerCase()] : [path, base]
+    if (p === b) return container
+    if (p.startsWith(b + '/')) {
+      return container + path.slice(base.length)
     }
   }
   return hostPath

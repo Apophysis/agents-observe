@@ -1,7 +1,7 @@
 // test/hooks/scripts/lib/fs.test.mjs
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve, isAbsolute } from 'node:path'
 import { tmpdir } from 'node:os'
 
 import {
@@ -62,21 +62,21 @@ describe('validatePath', () => {
   })
 
   it('resolves valid absolute paths', () => {
-    expect(validatePath('/tmp/test')).toBe('/tmp/test')
+    expect(validatePath('/tmp/test')).toBe(resolve('/tmp/test'))
   })
 
   it('resolves relative paths to absolute', () => {
     const result = validatePath('relative/path')
-    expect(result).toContain('relative/path')
-    expect(result.startsWith('/')).toBe(true)
+    expect(result).toContain(join('relative', 'path'))
+    expect(isAbsolute(result)).toBe(true)
   })
 
   it('allows paths with spaces', () => {
-    expect(validatePath('/tmp/my dir/data')).toBe('/tmp/my dir/data')
+    expect(validatePath('/tmp/my dir/data')).toBe(resolve('/tmp/my dir/data'))
   })
 
   it('allows dot-prefixed paths', () => {
-    expect(validatePath('/home/user/.agents-observe')).toBe('/home/user/.agents-observe')
+    expect(validatePath('/home/user/.agents-observe')).toBe(resolve('/home/user/.agents-observe'))
   })
 })
 

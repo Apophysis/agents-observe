@@ -7,7 +7,44 @@ import {
   buildHookEvent,
   buildEnv,
   getSessionInfo,
+  titleFromEntry,
 } from '../../../../../hooks/scripts/lib/agents/claude-code.mjs'
+
+describe('claude-code.titleFromEntry', () => {
+  const user = (content, extra = {}) => ({ type: 'user', message: { role: 'user', content }, ...extra })
+
+  it('uses the first line of a string prompt', () => {
+    expect(titleFromEntry(user('Fix the login redirect\nand add a test'))).toBe('Fix the login redirect')
+  })
+
+  it('reads the first text block of array content', () => {
+    expect(titleFromEntry(user([{ type: 'text', text: 'Add dark mode' }]))).toBe('Add dark mode')
+  })
+
+  it('strips system-reminder blocks before taking the first line', () => {
+    const text = '<system-reminder>\nhook noise\n</system-reminder>\nRename the sidebar'
+    expect(titleFromEntry(user(text))).toBe('Rename the sidebar')
+  })
+
+  it('skips meta, sidechain, command echoes, empty and non-user entries', () => {
+    expect(titleFromEntry(user('x', { isMeta: true }))).toBeNull()
+    expect(titleFromEntry(user('x', { isSidechain: true }))).toBeNull()
+    expect(titleFromEntry(user('<command-name>/clear</command-name>'))).toBeNull()
+    expect(titleFromEntry(user('<system-reminder>only</system-reminder>'))).toBeNull()
+    expect(titleFromEntry({ type: 'assistant', message: { content: 'hi' } })).toBeNull()
+  })
+
+  it('skips lines that are only a wrapper tag', () => {
+    const text = ['<pasted_content id="5a62">', 'Login successful', '</pasted_content id="5a62">']
+    expect(titleFromEntry(user(text.join('\n')))).toBe('Login successful')
+  })
+
+  it('cuts long prompts at a word boundary with an ellipsis', () => {
+    const t = titleFromEntry(user('word '.repeat(30)))
+    expect(t.length).toBeLessThanOrEqual(49)
+    expect(t.endsWith('…')).toBe(true)
+  })
+})
 
 function makeLog() {
   return {
@@ -54,6 +91,7 @@ describe('claude-code.getSessionInfo', () => {
     expect(result).toEqual({
       slug: 'my-session',
       git: { branch: 'feat/foo', repository_url: null },
+      title: null,
     })
     rmSync(dir, { recursive: true, force: true })
   })
@@ -68,7 +106,19 @@ describe('claude-code.getSessionInfo', () => {
     expect(result).toEqual({
       slug: 'the-slug',
       git: { branch: 'main', repository_url: null },
+      title: null,
     })
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('returns the first real user prompt as title, skipping meta entries', () => {
+    const { path, dir } = writeTranscript([
+      { type: 'user', isMeta: true, message: { content: 'meta noise' } },
+      { type: 'user', message: { content: 'Plan the Greece trip' }, gitBranch: 'HEAD' },
+    ])
+    const result = getSessionInfo({ transcriptPath: path }, { log: makeLog() })
+    expect(result.title).toBe('Plan the Greece trip')
+    expect(result.git.branch).toBe('HEAD')
     rmSync(dir, { recursive: true, force: true })
   })
 
@@ -78,6 +128,7 @@ describe('claude-code.getSessionInfo', () => {
     expect(result).toEqual({
       slug: null,
       git: { branch: null, repository_url: null },
+      title: null,
     })
     rmSync(dir, { recursive: true, force: true })
   })

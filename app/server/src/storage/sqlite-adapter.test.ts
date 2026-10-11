@@ -1,6 +1,15 @@
 import { describe, test, expect, beforeEach } from 'vitest'
 import { tmpdir } from 'node:os'
-import { unlinkSync } from 'node:fs'
+import { unlinkSync as rawUnlinkSync } from 'node:fs'
+
+// Windows keeps the sqlite file locked while the handle is open; temp files are best-effort.
+function unlinkSync(p: string) {
+  try {
+    rawUnlinkSync(p)
+  } catch (e: any) {
+    if (e?.code !== 'EBUSY' && e?.code !== 'EPERM') throw e
+  }
+}
 import Database from 'better-sqlite3'
 import { SqliteAdapter } from './sqlite-adapter'
 import { DuplicateEventSignatureError } from './types'

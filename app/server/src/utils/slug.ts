@@ -4,8 +4,6 @@
 // went away. The new project resolver only needs a single deterministic
 // slug for find-or-create-by-slug.
 
-import { basename } from 'node:path'
-
 /**
  * Derive a slug from an absolute path. Pure: take the basename,
  * lowercase, replace runs of non-alphanumeric with a single hyphen,
@@ -22,8 +20,9 @@ import { basename } from 'node:path'
  */
 export function deriveSlugFromPath(p: string): string {
   if (!p) return 'unnamed'
-  const trimmed = p.replace(/\/+$/, '')
-  const base = basename(trimmed) || 'unnamed'
+  // Split on both separators: the server runs in Linux but sessions can
+  // report Windows paths (C:\Users\joe\app), which posix basename() leaves whole.
+  const base = p.split(/[\\/]+/).filter(Boolean).pop() || 'unnamed'
   const slug = base
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')

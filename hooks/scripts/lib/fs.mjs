@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync, unlinkSync, existsSync, mkdirSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { parse, resolve } from 'node:path'
 
 /**
  * Validates a file or directory path to protect against mangled or dangerous values.
@@ -26,8 +26,8 @@ export function validatePath(raw, label = 'path') {
   const resolved = resolve(raw)
 
   // Prevent creating dirs at the filesystem root
-  if (resolved === '/') {
-    throw new Error(`${label} resolves to filesystem root (/): "${raw}"`)
+  if (resolved === parse(resolved).root) {
+    throw new Error(`${label} resolves to filesystem root: "${raw}"`)
   }
 
   return resolved

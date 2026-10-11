@@ -84,6 +84,7 @@ describe('callbacks round-trip — server-emitted shape (name + transcriptPath)'
     expect(received[0].body).toEqual({
       slug: 'my-session',
       git: { branch: 'feat/x', repository_url: null },
+      title: null,
       // Mirrored back from the request args so the server can correlate.
       agentClass: 'claude-code',
       cwd: null,
