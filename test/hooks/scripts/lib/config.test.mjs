@@ -1,6 +1,6 @@
 // test/config.test.mjs
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -587,6 +587,66 @@ describe('getClientEnv', () => {
 
     expect(env.AGENTS_OBSERVE_SERVER_PORT).toBe(cfg.serverPort)
     expect(env.AGENTS_OBSERVE_DEV_CLIENT_PORT).toBeDefined()
+  })
+})
+
+describe('getServerEnv — redact patterns path', () => {
+  afterEach(() => {
+    delete process.env.AGENTS_OBSERVE_REDACT_PATTERNS_PATH
+  })
+
+  it('passes an existing file path through in local mode', async () => {
+    const p = join(tmpHome, 'p.json')
+    writeFileSync(p, '[]')
+    process.env.AGENTS_OBSERVE_REDACT_PATTERNS_PATH = p
+    const mod = await loadModule()
+    const env = mod.getServerEnv(mod.getConfig({ runtime: 'local' }))
+    expect(env.AGENTS_OBSERVE_REDACT_PATTERNS_PATH).toBe(p)
+  })
+
+  it('omits a missing file or a directory in local mode with one warning', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const mod = await loadModule()
+      for (const p of [join(tmpHome, 'nope-' + Date.now() + '.json'), tmpHome]) {
+        process.env.AGENTS_OBSERVE_REDACT_PATTERNS_PATH = p
+        const cfg = mod.getConfig({ runtime: 'local' })
+        expect(mod.getServerEnv(cfg)).not.toHaveProperty('AGENTS_OBSERVE_REDACT_PATTERNS_PATH')
+        mod.getServerEnv(cfg)
+      }
+      expect(warn).toHaveBeenCalledTimes(2)
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  it('ignores a relative path with an absolute-path warning', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      process.env.AGENTS_OBSERVE_REDACT_PATTERNS_PATH = 'rel/p.json'
+      const mod = await loadModule()
+      const cfg = mod.getConfig({ runtime: 'docker' })
+      expect(cfg.redactPatternsPath).toBe('')
+      expect(warn).toHaveBeenCalledTimes(1)
+      expect(warn.mock.calls[0][0]).toContain('absolute')
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  it('does not forward it in docker mode (docker.mjs mounts it)', async () => {
+    process.env.AGENTS_OBSERVE_REDACT_PATTERNS_PATH = '/etc/p.json'
+    const mod = await loadModule()
+    const cfg = mod.getConfig({ runtime: 'docker' })
+    expect(cfg.redactPatternsPath).toBe('/etc/p.json')
+    expect(mod.getServerEnv(cfg)).not.toHaveProperty('AGENTS_OBSERVE_REDACT_PATTERNS_PATH')
+  })
+
+  it('is absent when unset', async () => {
+    const mod = await loadModule()
+    const cfg = mod.getConfig({ runtime: 'local' })
+    expect(cfg.redactPatternsPath).toBe('')
+    expect(mod.getServerEnv(cfg)).not.toHaveProperty('AGENTS_OBSERVE_REDACT_PATTERNS_PATH')
   })
 })
 

@@ -2,9 +2,9 @@
 // Centralized config resolution for Agents Observe CLI and MCP server.
 // No dependencies - uses only Node.js built-ins.
 
-import { resolve, dirname } from 'node:path'
+import { resolve, dirname, isAbsolute } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { existsSync } from 'node:fs'
+import { existsSync, statSync } from 'node:fs'
 import { ALL_CALLBACK_HANDLERS } from './callbacks.mjs'
 import {
   resolvePluginDataDir,
@@ -16,6 +16,30 @@ import { maybeMigrateLegacyDb } from './migrate-db.mjs'
 
 // Absolute path to root of this project, where the plugin is installed
 const installDir = resolve(dirname(fileURLToPath(import.meta.url)), '../../../')
+
+const warned = new Set()
+function warnOnce(msg) {
+  if (warned.has(msg)) return
+  warned.add(msg)
+  console.warn(msg)
+}
+
+/** True if path is set and is a regular file; warns once otherwise (when set). */
+function isRegularFile(path) {
+  if (!path) return false
+  let ok = false
+  try {
+    ok = statSync(path).isFile()
+  } catch {
+    // missing or unreadable
+  }
+  if (!ok) {
+    warnOnce(
+      `AGENTS_OBSERVE_REDACT_PATTERNS_PATH "${path}" is not an existing regular file, continuing without it`,
+    )
+  }
+  return ok
+}
 
 /**
  * Returns shared config. Accepts optional CLI overrides.
@@ -150,6 +174,20 @@ export function getConfig(overrides = {}) {
       ? existsSync('/sys/fs/selinux')
       : ['1', 'true', 'on', 'yes'].includes(selinuxRelabelSetting)
 
+  // Relative paths would resolve against whatever cwd the hook process has,
+  // giving each project a different file, so only absolute paths are accepted.
+  const rawRedactPath = process.env.AGENTS_OBSERVE_REDACT_PATTERNS_PATH || ''
+  let redactPatternsPath = ''
+  if (rawRedactPath) {
+    if (isAbsolute(rawRedactPath)) {
+      redactPatternsPath = resolve(rawRedactPath)
+    } else {
+      warnOnce(
+        `AGENTS_OBSERVE_REDACT_PATTERNS_PATH "${rawRedactPath}" must be an absolute path, ignoring it`,
+      )
+    }
+  }
+
   return {
     pluginName,
     isPlugin,
@@ -259,6 +297,13 @@ export function getConfig(overrides = {}) {
     transcriptCodexHost:
       process.env.AGENTS_OBSERVE_TRANSCRIPT_CODEX_HOST_BASE || resolve(homeDir, '.codex/sessions'),
 
+    /**
+     * Optional redaction-patterns JSON file on the host (absolute path, or ''
+     * when unset). Local mode passes it straight to the server. Docker mode
+     * validates it and mounts it read-only (see docker.mjs).
+     */
+    redactPatternsPath: redactPatternsPath,
+
     serverPortFile,
 
     installDir,
@@ -315,6 +360,13 @@ export function getServerEnv(config) {
     // Only forward the CORS allowlist when the user set one; otherwise leave
     // it unset so the server applies its loopback-reflect default.
     ...(config.corsOrigins ? { AGENTS_OBSERVE_CORS_ORIGINS: config.corsOrigins } : {}),
+    // Local mode: pass the host path through. Docker mode: not forwarded here;
+    // docker.mjs validates the file, mounts it read-only and sets the
+    // container-side path itself.
+    // A bad path never reaches the server: warn once and omit it.
+    ...(!isDocker && isRegularFile(config.redactPatternsPath)
+      ? { AGENTS_OBSERVE_REDACT_PATTERNS_PATH: config.redactPatternsPath }
+      : {}),
   }
 }
 

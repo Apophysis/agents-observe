@@ -2,7 +2,8 @@
 // Docker container management for Agents Observe. Node.js built-ins only.
 
 import { execFile } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, statSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { getJson } from './http.mjs'
 import { initLocalDataDirs, getServerEnv } from './config.mjs'
 import { saveServerPortFile, removeServerPortFile } from './fs.mjs'
@@ -26,11 +27,11 @@ function run(cmd, args) {
  * Read the managed label value from a container.
  * Returns the label string (version) if it's our container, null otherwise.
  */
-async function getContainerLabel(config) {
+async function getContainerLabel(config, labelName = config.dockerLabel) {
   const result = await run('docker', [
     'inspect',
     '--format',
-    `{{index .Config.Labels "${config.dockerLabel}"}}`,
+    `{{index .Config.Labels "${labelName}"}}`,
     config.containerName,
   ])
   return result.ok && result.stdout ? result.stdout : null
@@ -78,7 +79,46 @@ async function getContainerState(config) {
   const running = statusResult.ok && statusResult.stdout === 'true'
   const versionMatch = label === (config.expectedVersion || 'unknown')
 
-  return { exists: true, running, versionMatch, labelVersion: label }
+  const redactLabel = (await getContainerLabel(config, REDACT_LABEL)) || ''
+
+  return { exists: true, running, versionMatch, labelVersion: label, redactLabel }
+}
+
+/**
+ * Single `docker inspect` for the healthy-server path. Returns the redact label
+ * ('' when missing) only if the container is ours AND running, else null.
+ */
+async function getRunningRedactLabel(config) {
+  const result = await run('docker', [
+    'inspect',
+    '--format',
+    `{{.State.Running}}|{{index .Config.Labels "${config.dockerLabel}"}}|{{index .Config.Labels "${REDACT_LABEL}"}}`,
+    config.containerName,
+  ])
+  if (!result.ok) return null
+  const [running, managed, redact] = result.stdout.split('|')
+  if (running !== 'true' || !managed) return null
+  return redact || ''
+}
+
+/**
+ * Decide what to do about a changed redaction-patterns config. Pure.
+ *   containerState: null (no managed container) | 'running' | 'stopped'
+ *   actualLabel / desiredLabel: redact label values ('' = none; undefined = ''
+ *   for containers that predate the label)
+ * Returns:
+ *   'none'     nothing to do
+ *   'warn'     a healthy shared server runs with a different config: never
+ *              recreate it (other sessions use it), tell the user to restart
+ *   'recreate' a stopped container would be restarted with a stale config
+ * A running container that is not the healthy server is left to the existing
+ * unhealthy-container path, which recreates it with the current label.
+ */
+export function decideRedactAction({ serverHealthy, containerState, actualLabel, desiredLabel }) {
+  if (!containerState) return 'none'
+  if ((actualLabel || '') === (desiredLabel || '')) return 'none'
+  if (serverHealthy) return containerState === 'running' ? 'warn' : 'none'
+  return containerState === 'stopped' ? 'recreate' : 'none'
 }
 
 // -- Docker lifecycle ---------------------------------------------
@@ -138,6 +178,151 @@ export function buildTranscriptMounts(
     .flatMap(({ host, container }) => ['-v', `${host}:${container}:${opts}`])
 }
 
+/** Fixed container-side path of the optional redaction-patterns file. */
+export const REDACT_PATTERNS_CONTAINER_PATH = '/app/redact-patterns.json'
+
+/**
+ * Build the `docker run` args for the optional redaction-patterns file.
+ * Returns `{ args, warning }`. `args` is empty when the path is unset or is not
+ * an existing regular file (then `warning` explains why; startup continues).
+ * Mounts the single file read-only, never a directory. The file content is
+ * never read or logged, and only the path appears in the warning.
+ * `stat` is injectable for tests.
+ */
+export function buildRedactPatternsArgs({ hostPath, relabel = false }, stat = statSync) {
+  if (!hostPath) return { args: [], warning: null }
+  let isFile = false
+  try {
+    isFile = stat(hostPath).isFile()
+  } catch {
+    // missing or unreadable: handled below
+  }
+  if (!isFile) {
+    return {
+      args: [],
+      warning: `AGENTS_OBSERVE_REDACT_PATTERNS_PATH "${hostPath}" is not an existing regular file, continuing without it`,
+    }
+  }
+  return {
+    args: [
+      '-v',
+      `${hostPath}:${REDACT_PATTERNS_CONTAINER_PATH}:${relabel ? 'ro,z' : 'ro'}`,
+      '-e',
+      `AGENTS_OBSERVE_REDACT_PATTERNS_PATH=${REDACT_PATTERNS_CONTAINER_PATH}`,
+    ],
+    warning: null,
+  }
+}
+
+/** Container label recording which redaction-patterns file it was created with. */
+export const REDACT_LABEL = 'agents-observe.redact'
+
+/**
+ * Label value for the redaction config: a short hash of the host path (so the
+ * path is not exposed in labels), or '' when no valid file is configured.
+ */
+export function redactLabelValue(hostPath, valid) {
+  if (!hostPath || !valid) return ''
+  return createHash('sha256').update(hostPath).digest('hex').slice(0, 16)
+}
+
+/**
+ * Pure builder for the full `docker run` argv. `redact` is the result of
+ * buildRedactPatternsArgs. `exists` is injectable for the transcript mounts.
+ */
+export function buildDockerRunArgs(
+  { config, serverEnv, portMapping, redact, redactLabel },
+  exists = existsSync,
+) {
+  const envArgs = Object.entries(serverEnv).flatMap(([k, v]) => ['-e', `${k}=${v}`])
+  const labelValue = config.expectedVersion || 'unknown'
+  // One mount per supported agent class. Each can resolve to a
+  // different host path (user override) but the container side is
+  // fixed so the server's resolveTranscriptPath knows where things
+  // land. Missing host paths are silently skipped so e.g. a user
+  // without codex installed doesn't error out.
+  const transcriptMounts = buildTranscriptMounts(
+    {
+      claudeHost: config.transcriptClaudeHost,
+      codexHost: config.transcriptCodexHost,
+      enabled: config.transcriptStatsEnabled,
+      relabel: config.selinuxRelabel,
+    },
+    exists,
+  )
+  return [
+    'run',
+    '-d',
+    '--name',
+    config.containerName,
+    '--label',
+    `${config.dockerLabel}=${labelValue}`,
+    '--label',
+    `${REDACT_LABEL}=${redactLabel || ''}`,
+    '-p',
+    portMapping,
+    ...envArgs,
+    '-v',
+    buildDataMount(config.dataDir, config.selinuxRelabel),
+    ...transcriptMounts,
+    ...redact.args,
+    config.dockerImage,
+  ]
+}
+
+/**
+ * Pure decision for a healthy server answering on the target port.
+ *   ownRunningLabel: redact label of OUR running managed container, or null if
+ *   the healthy server is not our running container (dev server, other
+ *   worktree, etc).
+ * Returns 'other-service' | 'version-recreate' | 'recreate' |
+ * 'warn-cannot-restart' | 'warn-redact' | 'return-port'. Without `recreate` it
+ * never returns 'recreate'. 'recreate' needs docker runtime AND our own
+ * running container.
+ */
+export function decideHealthyAction({
+  idMatch,
+  versionMatch,
+  recreate,
+  runtime,
+  ownRunningLabel,
+  desiredLabel,
+}) {
+  if (!idMatch) return 'other-service'
+  if (!versionMatch) return 'version-recreate'
+  if (recreate) {
+    return runtime === 'docker' && ownRunningLabel !== null ? 'recreate' : 'warn-cannot-restart'
+  }
+  const redactAction = decideRedactAction({
+    serverHealthy: true,
+    containerState: ownRunningLabel === null ? null : 'running',
+    actualLabel: ownRunningLabel,
+    desiredLabel,
+  })
+  return redactAction === 'warn' ? 'warn-redact' : 'return-port'
+}
+
+/**
+ * Pull the image. With `allowLocal`, a failed pull is non-fatal when the image
+ * already exists locally. Returns true if the image is usable. Skipped in the
+ * test harness (AGENTS_OBSERVE_TEST_SKIP_PULL=1).
+ */
+async function ensureImage(config, log, allowLocal) {
+  if (config.testSkipPull) {
+    log.info('AGENTS_OBSERVE_TEST_SKIP_PULL=1 — skipping docker pull (test harness)')
+    return true
+  }
+  log.info('Pulling image and starting container...')
+  const pullResult = await run('docker', ['pull', config.dockerImage])
+  if (pullResult.ok) return true
+  if (allowLocal && (await run('docker', ['image', 'inspect', config.dockerImage])).ok) {
+    log.warn(`Failed to pull image, using local copy: ${pullResult.stderr}`)
+    return true
+  }
+  log.error(`Failed to pull image: ${pullResult.stderr}`)
+  return false
+}
+
 /**
  * Starts the Docker container. Returns the actual port the server is running on.
  * Handles: version mismatch (restart), port conflict (auto-assign), stale containers.
@@ -145,7 +330,7 @@ export function buildTranscriptMounts(
  * Fast path: if a stopped container exists with the correct version, just
  * `docker start` it instead of rm + pull + run.
  */
-export async function startServer(config, log = console) {
+export async function startServer(config, log = console, opts = {}) {
   // Check Docker availability
   const dockerCheck = await run('docker', ['info'])
   if (!dockerCheck.ok) {
@@ -154,22 +339,77 @@ export async function startServer(config, log = console) {
     return null
   }
 
+  // Optional redaction-patterns file. The desired label value ('' when unset or
+  // invalid) is compared with the existing container so a changed config
+  // recreates it, like a version mismatch.
+  const redact = buildRedactPatternsArgs({
+    hostPath: config.redactPatternsPath,
+    relabel: config.selinuxRelabel,
+  })
+  if (redact.warning) log.warn(redact.warning)
+  const redactLabel = redactLabelValue(config.redactPatternsPath, redact.args.length > 0)
+
+  // Track whether we removed a container (so a failed fresh start can clean up
+  // the port file) and whether the image was already pulled (recreate path).
+  let removedAny = false
+  let pulled = false
+  const removeOurs = async () => {
+    if (await safeRemoveContainer(config, log)) removedAny = true
+  }
+  const failStart = () => {
+    if (removedAny) removeServerPortFile(config)
+    return null
+  }
+
   // Check if something is already running on the target port
   const healthResult = await getJson(`${config.apiBaseUrl}/health`)
   if (healthResult.status === 200 && healthResult.body?.ok) {
-    if (healthResult.body.id !== config.API_ID) {
+    const idMatch = healthResult.body.id === config.API_ID
+    const versionMatch =
+      !config.expectedVersion || healthResult.body.version === config.expectedVersion
+    // One read of our own container's redact label, only when it could matter.
+    const ownRunningLabel = idMatch && versionMatch ? await getRunningRedactLabel(config) : null
+    const action = decideHealthyAction({
+      idMatch,
+      versionMatch,
+      recreate: !!opts.recreate,
+      runtime: config.runtime,
+      ownRunningLabel,
+      desiredLabel: redactLabel,
+    })
+    const healthyPort = new URL(config.apiBaseUrl).port || '4981'
+    if (action === 'other-service') {
       log.warn(
         `Port ${config.serverPort} is in use by another service, auto-assigning a free port...`,
       )
-    } else if (config.expectedVersion && healthResult.body.version !== config.expectedVersion) {
+    } else if (action === 'version-recreate') {
       log.warn(
         `Server version mismatch: running ${healthResult.body.version}, expected ${config.expectedVersion}. Restarting...`,
       )
-      await safeRemoveContainer(config, log)
+      await removeOurs()
+    } else if (action === 'recreate') {
+      // Pull first so a failed pull never leaves us without a server.
+      if (await ensureImage(config, log, true)) {
+        pulled = true
+        log.info('Recreating container (restart requested)...')
+        await removeOurs()
+      } else {
+        log.warn('Restart aborted: image unavailable, keeping the running server')
+        return healthyPort
+      }
+    } else if (action === 'warn-cannot-restart') {
+      log.warn('Restart cannot replace this server: it is not the managed Docker container')
+      return healthyPort
     } else {
-      const port = new URL(config.apiBaseUrl).port || '4981'
-      log.info(`Server already running on port ${port}`)
-      return port
+      // Never recreate a healthy shared server on a config difference: other
+      // sessions are using it.
+      if (action === 'warn-redact') {
+        log.warn(
+          'Redaction patterns config differs from the running server; run /observe restart to apply',
+        )
+      }
+      log.info(`Server already running on port ${healthyPort}`)
+      return healthyPort
     }
   }
 
@@ -177,7 +417,29 @@ export async function startServer(config, log = console) {
   initLocalDataDirs(config)
 
   // Check existing container state
-  const state = await getContainerState(config)
+  let state = await getContainerState(config)
+
+  const redactAction = decideRedactAction({
+    serverHealthy: false,
+    containerState: state ? (state.running ? 'running' : 'stopped') : null,
+    actualLabel: state?.redactLabel,
+    desiredLabel: redactLabel,
+  })
+  const restartRequested = !!opts.recreate && config.runtime === 'docker'
+  if (state && (redactAction === 'recreate' || restartRequested)) {
+    if (await ensureImage(config, log, true)) {
+      pulled = true
+      log.warn(
+        restartRequested
+          ? 'Recreating container (restart requested)...'
+          : 'Redaction patterns config changed. Recreating container...',
+      )
+      await removeOurs()
+      state = null
+    } else {
+      log.warn('Recreate skipped: image unavailable, keeping the existing container')
+    }
+  }
 
   if (state) {
     if (state.running) {
@@ -190,7 +452,7 @@ export async function startServer(config, log = console) {
       }
       // Running but not healthy — remove and do a fresh start
       log.warn('Container is running but unhealthy, restarting...')
-      await safeRemoveContainer(config, log)
+      await removeOurs()
     } else if (state.versionMatch) {
       // Stopped container with correct version — fast restart
       log.info(`Restarting stopped container (v${state.labelVersion})...`)
@@ -202,62 +464,26 @@ export async function startServer(config, log = console) {
       }
       // docker start failed — fall through to fresh start
       log.warn(`Failed to restart container: ${startResult.stderr}`)
-      await safeRemoveContainer(config, log)
+      await removeOurs()
     } else {
       // Stopped container with wrong version — remove for upgrade
       log.info(`Upgrading container from v${state.labelVersion} to v${config.expectedVersion}...`)
-      await safeRemoveContainer(config, log)
+      await removeOurs()
     }
   }
 
   // -- Fresh start: pull + run ------------------------------------
 
   // Pull image (skipped in test harness when AGENTS_OBSERVE_TEST_SKIP_PULL=1)
-  if (!config.testSkipPull) {
-    log.info('Pulling image and starting container...')
-    const pullResult = await run('docker', ['pull', config.dockerImage])
-    if (!pullResult.ok) {
-      log.error(`Failed to pull image: ${pullResult.stderr}`)
-      return null
-    }
-  } else {
-    log.info('AGENTS_OBSERVE_TEST_SKIP_PULL=1 — skipping docker pull (test harness)')
-  }
+  if (!pulled && !(await ensureImage(config, log, false))) return failStart()
 
   // Build docker run args from centralized server env
   const serverEnv = getServerEnv(config)
   const containerPort = serverEnv.AGENTS_OBSERVE_SERVER_PORT
   const preferredPort = config.serverPort
-  const envArgs = Object.entries(serverEnv).flatMap(([k, v]) => ['-e', `${k}=${v}`])
-  const labelValue = config.expectedVersion || 'unknown'
 
   function dockerRunArgs(portMapping) {
-    // One mount per supported agent class. Each can resolve to a
-    // different host path (user override) but the container side is
-    // fixed so the server's resolveTranscriptPath knows where things
-    // land. Missing host paths are silently skipped so e.g. a user
-    // without codex installed doesn't error out.
-    const transcriptMounts = buildTranscriptMounts({
-      claudeHost: config.transcriptClaudeHost,
-      codexHost: config.transcriptCodexHost,
-      enabled: config.transcriptStatsEnabled,
-      relabel: config.selinuxRelabel,
-    })
-    return [
-      'run',
-      '-d',
-      '--name',
-      config.containerName,
-      '--label',
-      `${config.dockerLabel}=${labelValue}`,
-      '-p',
-      portMapping,
-      ...envArgs,
-      '-v',
-      buildDataMount(config.dataDir, config.selinuxRelabel),
-      ...transcriptMounts,
-      config.dockerImage,
-    ]
+    return buildDockerRunArgs({ config, serverEnv, portMapping, redact, redactLabel })
   }
 
   // Try preferred port, fall back to auto-assign
@@ -277,7 +503,7 @@ export async function startServer(config, log = console) {
 
     if (!runResult.ok) {
       log.error(`Failed to start container: ${runResult.stderr}`)
-      return null
+      return failStart()
     }
 
     const portResult = await run('docker', ['port', config.containerName, containerPort])
@@ -287,7 +513,7 @@ export async function startServer(config, log = console) {
     }
   } else if (!runResult.ok) {
     log.error(`Failed to start container: ${runResult.stderr}`)
-    return null
+    return failStart()
   }
 
   // Save port for hooks to discover

@@ -52,7 +52,9 @@ switch (cliArgs.commands[0] || 'help') {
     stopCommand()
     break
   case 'restart':
-    startCommand('Restarting server...')
+    // recreate: a healthy server is replaced so config changes (for example
+    // the redaction patterns file) take effect.
+    startCommand('Restarting server...', { recreate: true })
     break
   case 'db-reset':
     dbResetCommand()
@@ -131,9 +133,9 @@ async function healthCommand(exit = true) {
   }
 }
 
-async function startCommand(msg = 'Starting server...') {
+async function startCommand(msg = 'Starting server...', opts = {}) {
   log.info(msg)
-  const actualPort = await startServer(config, log)
+  const actualPort = await startServer(config, log, opts)
   if (actualPort) {
     await healthCommand(false)
     console.log(`\nServer started on port ${actualPort}`)
